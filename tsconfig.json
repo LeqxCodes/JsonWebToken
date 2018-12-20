@@ -1,0 +1,20 @@
+{
+    "files": ["index.ts"],
+    "include": ["**/*.ts", "*.ts"],
+    "compilerOptions": {
+      "module": "commonjs",
+      "noImplicitAny": true,
+      "target": "ES2018",
+      "outDir": "dist",
+      "rootDir": ".",
+      "sourceMap": true,
+      "baseUrl": ".",
+      "moduleResolution": "node",
+      "removeComments": false,
+      "typeRoots": ["node_modules/@types"],
+      "paths": {
+        "*": ["node_modules/@types/*"]
+      }
+    }
+  }
+  

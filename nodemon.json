@@ -1,0 +1,15 @@
+{
+    "ignore": [
+        "**/*.test.ts",
+        "**/*.spec.ts",
+        ".git",
+        "node_modules"
+    ],
+    "watch": [
+        "web",
+        "web/..",
+        "./"
+    ],
+    "exec": "npx ts-node index.ts",
+    "ext": "ts"
+}
