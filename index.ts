@@ -4,6 +4,7 @@ import * as bodyparser from "body-parser";
 const uuid = require("uuidv4");
 const jwt = require("jsonwebtoken");
 const CryptoJS = require("crypto-js");
+// Key for signing a JWT
 const key: string = "wn5ndJfLXR4lgPVK7VhcpG73TibKSiYUaRlSvRUw";
 
 //Links
@@ -11,11 +12,27 @@ const key: string = "wn5ndJfLXR4lgPVK7VhcpG73TibKSiYUaRlSvRUw";
 //UUIDV4: https://www.npmjs.com/package/uuidv4
 //CRYPTO-JS https://www.npmjs.com/package/crypto-js
 
+/**
+ * The webserver
+ *
+ * @export
+ * @class Server
+ */
 export class Server {
+  /**
+   * The express app of the server
+   *
+   * @type {express.Application}
+   * @memberof Server
+   */
   public app: express.Application;
 
   //#region Constructor
 
+  /**
+   *Creates an instance of Server.
+   * @memberof Server
+   */
   constructor() {
     //Setup
     this.app = express();
@@ -39,6 +56,15 @@ export class Server {
 
   //#region  Middleware
 
+  /**
+   * Middleware to log all incoming requests
+   *
+   * @private
+   * @param {express.Request} req
+   * @param {express.Response} res
+   * @param {express.NextFunction} next
+   * @memberof Server
+   */
   private logRequests(
     req: express.Request,
     res: express.Response,
@@ -52,6 +78,14 @@ export class Server {
 
   //#region EndPoints
 
+  /**
+   * The login REST API endpoint
+   *
+   * @private
+   * @param {express.Request} req
+   * @param {express.Response} res
+   * @memberof Server
+   */
   private loginEndPoint(req: express.Request, res: express.Response) {
     let user = new User(req.body.name, req.body.hash);
 
@@ -75,19 +109,26 @@ export class Server {
     res.status(200).send(this.createJwtToken(user));
   }
 
+  /**
+   * The data REST API Endpoint
+   *
+   * @private
+   * @param {express.Request} req
+   * @param {express.Response} res
+   * @memberof Server
+   */
   private dataEndPoint(req: express.Request, res: express.Response) {
     let auth: string = req.headers.authorization as string;
     let bearer: string = req.query.bearer as string;
     let token: string = auth ? auth : bearer || null;
 
     if (token) {
-        let decoded = this.decodeToken(token);
-        if(decoded){
-            res.send("Here is your data.");
-        }
-        else{
-            res.send(401).send();
-        }
+      let decoded = this.decodeToken(token);
+      if (decoded) {
+        res.send("Here is your data.");
+      } else {
+        res.send(401).send();
+      }
     } else {
       res.status(400).send();
     }
@@ -97,7 +138,14 @@ export class Server {
 
   //#region Custom jwt
 
-  //https://www.jonathan-petitcolas.com/2014/11/27/creating-json-web-token-in-javascript.html
+  /**
+   * Create a custom JWT
+   * https://www.jonathan-petitcolas.com/2014/11/27/creating-json-web-token-in-javascript.html
+   * @private
+   * @param {User} user
+   * @returns {string}
+   * @memberof Server
+   */
   private createCustomToken(user: User): string {
     if (!user || !user.name || !user.hash) {
       throw new Error("Invalid user!");
@@ -106,7 +154,14 @@ export class Server {
     let encoded = this.buildToken({ role: user.role, uuid: user.uuid });
     return this.signToken(encoded);
   }
-
+  /**
+   * Encode a string to base64
+   *
+   * @private
+   * @param {string} source
+   * @returns {string}
+   * @memberof Server
+   */
   private base64url(source: string): string {
     // Encode in classical base64
     let encodedSource = CryptoJS.enc.Base64.stringify(source);
@@ -121,6 +176,14 @@ export class Server {
     return encodedSource;
   }
 
+  /**
+   * Create a custom JWT
+   * self-implemented
+   * @private
+   * @param {*} data The data to store within the token
+   * @returns {string} The JWT as string
+   * @memberof Server
+   */
   private buildToken(data: any): string {
     const header = {
       alg: "HS256",
@@ -135,7 +198,14 @@ export class Server {
 
     return encodedHeader + "." + encodedData;
   }
-
+  /**
+   * Sign a custom JWT
+   * self-implemented
+   * @private
+   * @param {string} token
+   * @returns {string}
+   * @memberof Server
+   */
   private signToken(token: string): string {
     var signature = CryptoJS.HmacSHA256(token, key);
     signature = this.base64url(signature);
@@ -147,45 +217,91 @@ export class Server {
 
   //#region jwt
 
+  /**
+   * Create a signed JWT using jsonwebtoken (npm package)
+   *
+   * @private
+   * @param {User} user
+   * @returns {string}
+   * @memberof Server
+   */
   private createJwtToken(user: User): string {
     if (!user || !user.role || !user.uuid) {
       throw new Error("Invalid user!");
     }
 
     let result: string = jwt.sign({ role: user.role, uuid: user.uuid }, key, {
-      noTimestamp: true,
+      noTimestamp: true
     });
     return result;
   }
 
+  /**
+   * Decode a JWT using jsonwebtoken (npm package)
+   *
+   * @private
+   * @param {string} token
+   * @returns {*}
+   * @memberof Server
+   */
   private decodeToken(token: string): any {
     if (!token) {
       return null;
     }
 
-    try{
-
-        //jwt.decode(); -- Returns the decoded payload without verifying if the signature is valid!
-        return jwt.verify(token, key);
+    // Never use jwt.decode() !!!!
+    try {
+      //jwt.decode(); -- Returns the decoded payload without verifying if the signature is valid!
+      return jwt.verify(token, key);
+    } catch (ex) {
+      return null;
     }
-    catch(ex){
-        return null;
-    }
-
   }
 
   //#endregion jwt
 }
 
+/**
+ * Sample user Class
+ *
+ * @class User
+ */
 class User {
+  /**
+   * The name of the user
+   *
+   * @type {string}
+   * @memberof User
+   */
   public name: string;
-
+  /**
+   * The hash of the user
+   *
+   * @type {string}
+   * @memberof User
+   */
   public hash: string;
-
+  /**
+   * The role of the user
+   *
+   * @type {string}
+   * @memberof User
+   */
   public role: string;
-
+  /**
+   * The uinque Id of the user
+   *
+   * @type {string}
+   * @memberof User
+   */
   public uuid: string;
 
+  /**
+   *Creates an instance of User.
+   * @param {string} name The name
+   * @param {string} hash The hash
+   * @memberof User
+   */
   constructor(name: string, hash: string) {
     if (name === "bob") {
       this.role = "admin";
@@ -198,4 +314,7 @@ class User {
   }
 }
 
+/**
+ * Initialize and start the server.
+ */
 new Server();
